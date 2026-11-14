@@ -107,9 +107,22 @@ Rules: at least one test per behavior; no database mocks; test data built with b
 
 ## 10. Quality tooling
 
-- Pre-commit hooks: formatting, secret scanning (gitleaks), Conventional Commits check.
+- Pre-commit hooks (`.pre-commit-config.yaml`): whitespace and end-of-file fixes, YAML and JSON syntax, merge conflict markers, secret scanning (gitleaks), ruff lint and format, sqlfluff on `pipelines/dbt/`, and a Conventional Commits check on the commit message (commitizen).
+- Java formatting: Spotless with google-java-format; `make fmt` applies it and `make lint` checks it.
 - CI: path-filtered jobs and a single `ci-ok` aggregator job.
 - Supply chain: Dependabot, gitleaks, Trivy, CodeQL.
+
+### Hook installation
+
+Once per clone:
+
+```bash
+uv tool install pre-commit
+pre-commit install            # installs the pre-commit and commit-msg hooks
+pre-commit run --all-files    # optional: check the whole repository
+```
+
+The first run downloads and builds each hook environment, which takes a few minutes; later runs reuse them. To update the pinned hook versions, run `pre-commit autoupdate` and commit the result. Bypassing the hooks with `--no-verify` is not allowed: fix the reported problem instead.
 
 ## 11. Versioning and releases
 
