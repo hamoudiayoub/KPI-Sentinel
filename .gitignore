@@ -1,0 +1,67 @@
+# --- Secrets and environment (never committed) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Generated data, volumes and raw results ---
+data/
+volumes/
+infra/compose/volumes/
+checkpoints/
+spark-warehouse/
+metastore_db/
+*.parquet
+*.db
+*.sqlite
+
+# --- Java / Maven ---
+target/
+*.class
+*.jar
+.flattened-pom.xml
+dependency-reduced-pom.xml
+
+# --- Python / uv ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --- dbt ---
+pipelines/dbt/target/
+pipelines/dbt/logs/
+pipelines/dbt/dbt_packages/
+pipelines/dbt/.user.yml
+
+# --- Dagster ---
+.dagster_home/
+.dagster/
+
+# --- Node / web ---
+node_modules/
+services/web/dist/
+services/web/coverage/
+.pnpm-store/
+
+# --- Logs ---
+*.log
+logs/
+
+# --- IDE and OS ---
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

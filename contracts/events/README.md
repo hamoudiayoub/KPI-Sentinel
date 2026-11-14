@@ -1,0 +1,3 @@
+# contracts/events
+
+JSON Schemas of the CloudEvents 1.0 events (`sentinel.<domain>.<event>.v<N>`), one file per version: `investigation-requested.v1.json`, `anomaly-detected.v1.json`…

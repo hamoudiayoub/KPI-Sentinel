@@ -1,0 +1,23 @@
+# Normalize line endings to LF in the repository, whatever the OS of the workstation.
+* text=auto eol=lf
+
+# Windows scripts: CRLF is required by cmd.exe.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Unix launchers.
+mvnw text eol=lf
+*.sh text eol=lf
+
+# Generated files: collapsed in GitHub diffs.
+uv.lock linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+
+# Binaries.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.jar binary
+*.parquet binary
