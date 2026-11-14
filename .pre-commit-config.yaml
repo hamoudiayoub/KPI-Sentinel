@@ -1,0 +1,48 @@
+# Git hooks run before each commit (https://pre-commit.com).
+# Install once per clone: see docs/03-engineering-standards.md §10.
+# Versions are pinned to exact tags; the ruff hook matches the ruff version locked in uv.lock.
+
+minimum_pre_commit_version: "4.0.0"
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+repos:
+  # Generic hygiene checks.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+
+  # Secret scanning: blocks API keys, tokens and passwords before they reach history.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # Python lint (with safe autofixes) and formatting.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # SQL lint for the dbt project.
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 4.5.0
+    hooks:
+      - id: sqlfluff-lint
+        args: [--dialect, trino]
+        files: ^pipelines/dbt/
+
+  # Commit messages must follow Conventional Commits.
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.19.3
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
