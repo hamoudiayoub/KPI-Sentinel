@@ -1,0 +1,61 @@
+# Root of the uv workspace (ADR-0001, ADR-0007).
+# It is not an installable package: it carries the shared tooling (ruff, pytest)
+# and declares where the monorepo's Python packages live. Each package has its own
+# pyproject.toml and is added to `members` below when it is created.
+
+[project]
+name = "kpi-sentinel"
+version = "0.1.0"
+description = "KPI Sentinel — Python workspace: generator, streaming, dbt, orchestration, detector, evaluation."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "ruff>=0.14",
+  "pytest>=9",
+  "pytest-cov>=7",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+# uv requires a pyproject.toml in every listed folder (globs included), so members are added
+# explicitly as packages are created: services/event-generator, pipelines/streaming,
+# pipelines/orchestration, pipelines/dbt, services/anomaly-detector, evaluation.
+members = []
+
+# --- ruff: shared lint and format (docs/03-engineering-standards.md §7) ---
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["pipelines/dbt/target"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W",   # pycodestyle
+  "F",        # pyflakes
+  "I",        # isort
+  "B",        # bugbear
+  "UP",       # pyupgrade
+  "N",        # pep8-naming
+  "ANN",      # type annotations everywhere
+  "S",        # bandit (security)
+  "SIM",      # simplifications
+  "RUF",      # ruff rules
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "ANN"]   # assert allowed, annotations optional in tests
+
+# --- pytest: shared configuration ---
+[tool.pytest.ini_options]
+testpaths = ["services", "pipelines", "evaluation", "infra"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "integration: tests that start a container (Testcontainers) or use the compose stack",
+]
+xfail_strict = true
