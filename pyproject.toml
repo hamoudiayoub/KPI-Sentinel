@@ -59,3 +59,7 @@ markers = [
   "integration: tests that start a container (Testcontainers) or use the compose stack",
 ]
 xfail_strict = true
+
+# --- commitizen: commit messages must follow Conventional Commits ---
+[tool.commitizen]
+name = "cz_conventional_commits"
