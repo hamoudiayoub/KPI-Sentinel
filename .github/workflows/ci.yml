@@ -1,0 +1,170 @@
+# Continuous integration: builds and tests every pull request and every push to main.
+# Only the jobs whose files changed run; `ci-ok` is the single check required by branch
+# protection, so the set of jobs can change without touching the GitHub settings.
+# Third-party actions are pinned by commit SHA (the tag is kept in a comment for updates).
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read # paths-filter lists the changed files of a pull request
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A new push to a pull request makes the previous run obsolete; runs on main always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  UV_VERSION: "0.13.9"
+  JAVA_VERSION: "21"
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      java: ${{ steps.filter.outputs.java }}
+      python: ${{ steps.filter.outputs.python }}
+      dbt: ${{ steps.filter.outputs.dbt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # no job pushes, so the token is not kept in .git/config
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          # Changes to the shared build entry points re-run every job.
+          filters: |
+            shared: &shared
+              - .github/workflows/**
+              - Makefile
+            java:
+              - *shared
+              - pom.xml
+              - mvnw
+              - .mvn/**
+              - libs/**
+              - services/platform-api/**
+              - services/agent-service/**
+              - contracts/**
+              - semantic/**
+            python:
+              - *shared
+              - pyproject.toml
+              - uv.lock
+              - '**/*.py'
+              - '**/pyproject.toml'
+            dbt:
+              - *shared
+              - pipelines/dbt/**
+
+  java:
+    name: Java
+    needs: changes
+    if: needs.changes.outputs.java == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # no job pushes, so the token is not kept in .git/config
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Check formatting
+        run: make lint-java
+      - name: Build and test
+        run: make test-java
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: jacoco-report
+          path: '**/target/site/jacoco/'
+          if-no-files-found: ignore
+          retention-days: 14
+
+  python:
+    name: Python
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # no job pushes, so the token is not kept in .git/config
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install dependencies
+        # --locked fails if uv.lock is out of date with pyproject.toml.
+        run: uv sync --locked
+      - name: Lint
+        run: make lint-python
+      - name: Test
+        run: make test-python
+
+  dbt:
+    name: dbt
+    needs: changes
+    if: needs.changes.outputs.dbt == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # no job pushes, so the token is not kept in .git/config
+      - name: Check for a dbt project
+        id: project
+        run: |
+          if [ -f pipelines/dbt/dbt_project.yml ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No dbt project yet, nothing to check."
+          fi
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        if: steps.project.outputs.exists == 'true'
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install dependencies
+        if: steps.project.outputs.exists == 'true'
+        run: uv sync --locked
+      - name: Lint SQL
+        if: steps.project.outputs.exists == 'true'
+        run: make lint-dbt
+      - name: Parse project
+        if: steps.project.outputs.exists == 'true'
+        working-directory: pipelines/dbt
+        run: uv run dbt deps && uv run dbt parse
+
+  ci-ok:
+    name: ci-ok
+    needs: [changes, java, python, dbt]
+    # Runs even when a needed job failed or was skipped, so that it can report the outcome.
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check that every job succeeded or was skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              echo "::error::At least one job did not succeed ($result)."
+              exit 1
+            fi
+          done
