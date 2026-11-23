@@ -21,6 +21,24 @@ These rules apply to every change in the repository.
 - **Squash** merge only; the PR title becomes the commit message.
 - `main` protection: PR required, `ci-ok` check required, linear history, no force push.
 
+### Protecting `main`
+
+Configured once by a repository administrator, after the CI workflow has run at least once (GitHub only offers a status check it has already seen):
+
+1. **Settings → Rules → Rulesets → New ruleset → New branch ruleset**, name `main`, enforcement **Active**.
+2. **Target branches**: add **Include default branch**.
+3. Enable these rules:
+   - **Restrict deletions**.
+   - **Require linear history**.
+   - **Require a pull request before merging**, with **Allowed merge methods** set to **Squash** only.
+   - **Require status checks to pass**, with **Require branches to be up to date before merging**, and add the check **`ci-ok`** only. The other jobs run only when their files change, so requiring them would block pull requests that skip them.
+   - **Block force pushes**.
+4. **Settings → General → Pull Requests**: allow squash merging only, and enable **Automatically delete head branches**.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request and on every push to `main`. A first job detects which parts of the repository changed; the `java`, `python` and `dbt` jobs run only when their files changed, and call the same `make` targets as a workstation. The `ci-ok` job aggregates the results: it fails if any job failed or was cancelled, and passes if every job succeeded or was skipped. A new push to a pull request cancels its previous run. Third-party actions are pinned by commit SHA, with the release tag in a comment.
+
 ## 3. Pull requests
 
 - One coherent change per PR. Ideal diff < 600 lines excluding generated files; above that, split.
@@ -108,7 +126,7 @@ Rules: at least one test per behavior; no database mocks; test data built with b
 ## 10. Quality tooling
 
 - Pre-commit hooks: formatting, secret scanning (gitleaks), Conventional Commits check.
-- CI: path-filtered jobs and a single `ci-ok` aggregator job.
+- CI: path-filtered jobs and a single `ci-ok` aggregator job (see §2, Continuous integration).
 - Supply chain: Dependabot, gitleaks, Trivy, CodeQL.
 
 ## 11. Versioning and releases
