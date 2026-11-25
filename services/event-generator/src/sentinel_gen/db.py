@@ -22,7 +22,14 @@ AUDIT_COLUMNS = {"created_at", "updated_at"}
 
 
 def connect(settings: Settings) -> psycopg.Connection:
-    return psycopg.connect(settings.conninfo(), password=settings.db_password.get_secret_value())
+    """Autocommit connection: each `with conn.transaction()` block is its own transaction.
+
+    Without autocommit, psycopg opens an implicit transaction and nested blocks become
+    savepoints, so nothing would be committed before the connection closes.
+    """
+    return psycopg.connect(
+        settings.conninfo(), password=settings.db_password.get_secret_value(), autocommit=True
+    )
 
 
 def copy_rows(
