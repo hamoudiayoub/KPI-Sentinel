@@ -11,11 +11,11 @@ make up PROFILE=core                               # or PROFILE="core lake", or 
 make ps
 ```
 
-`make up` returns once every started service reports `healthy`, or fails after 180 s. Profiles:
+`make up` builds local images if needed, then returns once every long-running service is `healthy` and every one-shot service (migrations, topic creation) has exited successfully, or fails after 240 s. Profiles:
 
 | Profile | Services |
 |---|---|
-| `core` | `postgres-source` (ERP, `atlas` database), `postgres-platform` (`platform`, `keycloak`, `nessie`, `dagster` databases) |
+| `core` | `postgres-source` (ERP, `atlas` database, schema applied by `flyway-source`), `postgres-platform` (`platform`, `keycloak`, `nessie`, `dagster` databases), `kafka-1` to `kafka-3`, `kafka-init` (topics), `kafka-ui` (http://localhost:8080) |
 | `lake`, `platform`, `obs` | Added with their components |
 | `all` | Every service |
 

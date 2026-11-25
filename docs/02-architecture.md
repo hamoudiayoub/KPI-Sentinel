@@ -265,7 +265,7 @@ Key rules: a ratio is computed as `sum(numerator) / sum(denominator)`, never as 
 
 | Profile | Content | RAM |
 |---|---|---|
-| `core` | 2 Postgres, 3 Kafka, Connect, Kafka UI, generator | ~5 GB estimated; the 2 Postgres alone use ~70 MB idle (measured) |
+| `core` | 2 Postgres, 3 Kafka, Connect, Kafka UI, generator | ~5 GB estimated; measured so far: 2 Postgres ~70 MB, 3 Kafka nodes ~1.3 GB, Kafka UI ~290 MB (idle) |
 | `lake` | MinIO, Nessie, Trino, Spark, Dagster | ~6 GB |
 | `platform` | Keycloak, platform-api, agent-service, anomaly-detector, web | ~3 GB |
 | `obs` | OTel Collector, Prometheus, Grafana, Tempo, Loki | ~1.5 GB |
@@ -326,3 +326,5 @@ Each row gives the verification date and what compatibility was checked.
 | Python / uv | 3.12 / 0.13 | 2026-11-14 | Package versions pinned in `uv.lock` |
 | PostgreSQL (image `postgres:18.7-bookworm`) | 18.7 | 2026-11-25 | Latest 18.x; 19.0 is a fresh major, kept back until Debezium support is confirmed |
 | Flyway (image `flyway/flyway:13.13.0-alpine`) | 13.13.0 | 2026-11-25 | PostgreSQL 18.7 (migrations applied and validated) |
+| Apache Kafka (image `apache/kafka:4.4.0`) | 4.4.0 | 2026-11-25 | KRaft combined mode, 3 voters; clients and Kafka Connect use the backward-compatible protocol |
+| Kafka UI (image `kafbat/kafka-ui:v1.5.1`) | 1.5.1 | 2026-11-25 | Kafka 4.4.0 |
