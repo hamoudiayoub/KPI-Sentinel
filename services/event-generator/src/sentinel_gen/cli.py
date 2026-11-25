@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Annotated
 
 import typer
 
 from sentinel_gen import db
+from sentinel_gen.calendar import load_calendar
 from sentinel_gen.config import DEFAULT_CONFIG, load_config
+from sentinel_gen.history import ExistingHistoryError
+from sentinel_gen.history import backfill as run_backfill
 from sentinel_gen.logs import configure_logging
 from sentinel_gen.seed import ExistingDataError
 from sentinel_gen.seed import seed as seed_reference_data
@@ -36,6 +40,28 @@ def seed(
         try:
             seed_reference_data(conn, load_config(config), seed, force)
         except ExistingDataError as error:
+            typer.echo(f"error: {error}", err=True)
+            raise typer.Exit(code=1) from error
+
+
+@app.command()
+def backfill(
+    months: Annotated[int, typer.Option(min=1, help="Months of history before --end.")] = 18,
+    scale: Annotated[float, typer.Option(min=0.01, help="Multiplier of the order volume.")] = 1.0,
+    end: Annotated[
+        str | None, typer.Option(help="End of the history, exclusive (YYYY-MM-DD).")
+    ] = None,
+    seed: SeedOption = 42,
+    force: Annotated[bool, typer.Option(help="Replace existing transactions.")] = False,
+    config: ConfigOption = DEFAULT_CONFIG,
+) -> None:
+    """Generate the order history: prices, promotions, orders, deliveries and returns."""
+    market_config = load_config(config)
+    end_date = date.fromisoformat(end) if end else market_config.demand.history.end
+    with db.connect(Settings()) as conn:
+        try:
+            run_backfill(conn, market_config, load_calendar(), seed, months, scale, end_date, force)
+        except (ExistingHistoryError, ValueError, RuntimeError) as error:
             typer.echo(f"error: {error}", err=True)
             raise typer.Exit(code=1) from error
 
