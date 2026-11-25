@@ -30,7 +30,7 @@ EXEC        := $(COMPOSE) exec $$([ -t 0 ] || echo -T)
         lint-java lint-python lint-dbt lint-web \
         test-java test-python test-web test-integration \
         fmt-java fmt-python \
-        up down ps logs reset psql-source psql-platform check-env
+        up down ps logs reset psql-source psql-platform check-env seed gen
 
 help: ## List the available targets
 > @awk 'BEGIN { FS = ":.*## "; printf "\nUsage: make <target>\n" } \
@@ -117,3 +117,14 @@ psql-source: check-env ## Open psql on the source ERP database (atlas)
 
 psql-platform: check-env ## Open psql on the platform Postgres server
 > $(EXEC) postgres-platform psql -U postgres
+
+##@ Simulated ERP
+
+SEED ?= 42
+GENERATOR := $(COMPOSE) --profile core --profile generator run --rm --build event-generator
+
+seed: check-env ## Load the ERP reference data (SEED=42; FORCE=1 replaces existing data)
+> $(GENERATOR) seed --seed $(SEED) $(if $(FORCE),--force)
+
+gen: check-env ## Run any event-generator command, e.g. make gen ARGS="fingerprint"
+> $(GENERATOR) $(ARGS)

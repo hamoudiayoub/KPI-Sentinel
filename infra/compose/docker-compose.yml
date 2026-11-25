@@ -201,6 +201,28 @@ services:
       retries: 12
       start_period: 30s
 
+  # Simulated ERP activity. Run commands with `make seed`, or
+  # `docker compose run --rm event-generator <command>`.
+  event-generator:
+    build:
+      context: ../..
+      dockerfile: services/event-generator/Dockerfile
+    image: kpi-sentinel/event-generator:local
+    profiles: [generator]
+    networks: [sentinel]
+    depends_on:
+      flyway-source: { condition: service_completed_successfully }
+    environment:
+      SENTINEL_GEN_DB_HOST: postgres-source
+      SENTINEL_GEN_DB_PORT: 5432
+      SENTINEL_GEN_DB_NAME: atlas
+      SENTINEL_GEN_DB_USER: postgres
+      SENTINEL_GEN_DB_PASSWORD: ${POSTGRES_SOURCE_PASSWORD:?set POSTGRES_SOURCE_PASSWORD in infra/compose/.env}
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
   # Databases of the platform services, one database and one owner role per service.
   postgres-platform:
     <<: *postgres-defaults
