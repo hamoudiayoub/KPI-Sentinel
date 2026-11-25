@@ -1,0 +1,26 @@
+[project]
+name = "event-generator"
+version = "0.1.0"
+description = "Simulated ERP of Atlas Distribution: reference data, order history and a live order stream."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "numpy>=2.5",
+  "prometheus-client>=0.26",
+  "psycopg[binary]>=3.3",
+  "pydantic>=2.14",
+  "pydantic-settings>=2.16",
+  "pyyaml>=6.0",
+  "typer>=0.29",
+]
+
+[project.scripts]
+sentinel-gen = "sentinel_gen.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "sentinel_gen"

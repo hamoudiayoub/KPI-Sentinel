@@ -77,6 +77,17 @@ make test            # Maven verify, pytest, web tests
 make fmt             # reformats Java and Python
 ```
 
+Local stack (Docker Compose, by profile):
+
+```bash
+cp infra/compose/.env.example infra/compose/.env
+make up PROFILE=core   # start the core services and wait until they are healthy
+make ps
+make down
+```
+
+See [docs/runbooks/local-environment.md](docs/runbooks/local-environment.md).
+
 ## Contributing
 
 Branches follow `<type>/<short-description>`, commits follow [Conventional Commits](https://www.conventionalcommits.org/), and every change goes through a pull request with `make lint` and `make test` passing. See [docs/03-engineering-standards.md](docs/03-engineering-standards.md).

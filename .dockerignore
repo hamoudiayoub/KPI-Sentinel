@@ -1,0 +1,9 @@
+# Images built from the repository root only receive what they copy explicitly.
+*
+!pyproject.toml
+!uv.lock
+!services/event-generator/
+!semantic/calendar/
+**/__pycache__
+**/.pytest_cache
+**/tests

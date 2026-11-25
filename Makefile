@@ -18,10 +18,19 @@ PNPM ?= pnpm
 DBT_PROJECT := pipelines/dbt/dbt_project.yml
 WEB_PROJECT := services/web/package.json
 
+# Local stack. PROFILE accepts one or several profiles: `make up PROFILE="core lake"`.
+COMPOSE_DIR := infra/compose
+COMPOSE_ENV := $(COMPOSE_DIR)/.env
+COMPOSE     := docker compose --project-directory $(COMPOSE_DIR) -f $(COMPOSE_DIR)/docker-compose.yml
+PROFILE     ?= core
+# `docker compose exec` needs -T when stdin is not a terminal (e.g. `make psql-source <<< "..."`).
+EXEC        := $(COMPOSE) exec $$([ -t 0 ] || echo -T)
+
 .PHONY: help lint test fmt \
         lint-java lint-python lint-dbt lint-web \
-        test-java test-python test-web \
-        fmt-java fmt-python
+        test-java test-python test-web test-integration \
+        fmt-java fmt-python \
+        up down ps logs reset psql-source psql-platform check-env seed gen
 
 help: ## List the available targets
 > @awk 'BEGIN { FS = ":.*## "; printf "\nUsage: make <target>\n" } \
@@ -55,9 +64,12 @@ test: test-java test-python test-web ## Run all tests
 test-java: ## Maven verify: unit tests, integration tests, JaCoCo report
 > $(MVN) verify
 
-test-python: ## pytest on every workspace package (exit code 5 = no tests, accepted)
-> @rc=0; $(UV) run pytest -q || rc=$$?; \
->   if [ "$$rc" = 5 ]; then echo "test-python: no tests yet"; else exit "$$rc"; fi
+test-python: ## pytest without integration tests (exit code 5 = no tests, accepted)
+> @rc=0; $(UV) run pytest -q -m "not integration" || rc=$$?; \
+>   if [ "$$rc" = 5 ]; then echo "test-python: no unit tests to run"; else exit "$$rc"; fi
+
+test-integration: ## pytest integration tests, against the running local stack
+> $(UV) run pytest -q -m integration
 
 test-web: ## services/web tests (skipped while the web app does not exist)
 > @if [ -f $(WEB_PROJECT) ]; then $(PNPM) -C services/web test; \
@@ -73,3 +85,46 @@ fmt-java: ## Apply google-java-format through Spotless
 fmt-python: ## ruff format, then automatic lint fixes
 > $(UV) run ruff format .
 > $(UV) run ruff check --fix .
+
+##@ Local stack
+
+check-env:
+> @if [ ! -f $(COMPOSE_ENV) ]; then \
+>   echo "Missing $(COMPOSE_ENV). Create it with: cp $(COMPOSE_DIR)/.env.example $(COMPOSE_ENV)"; \
+>   exit 1; fi
+
+up: check-env ## Start the PROFILE services and wait until they are ready (default: core)
+> $(COMPOSE) $(foreach p,$(PROFILE),--profile $(p)) up -d --build
+> $(COMPOSE_DIR)/wait-until-ready.sh 240 $(COMPOSE) $(foreach p,$(PROFILE),--profile $(p))
+
+down: check-env ## Stop every service of the stack, keeping the data volumes
+> $(COMPOSE) --profile all down
+
+ps: check-env ## List the stack's containers and their health
+> $(COMPOSE) --profile all ps
+
+logs: check-env ## Follow the logs of all services, or of one with S=<service>
+> $(COMPOSE) --profile all logs -f --tail=200 $(S)
+
+reset: check-env ## Stop the stack and DELETE its data volumes, after confirmation
+> @printf "This stops the stack and deletes all its data volumes. Type 'yes' to continue: "; \
+>   read -r answer; \
+>   if [ "$$answer" = "yes" ]; then $(COMPOSE) --profile all down --volumes --remove-orphans; \
+>   else echo "Aborted: nothing was deleted."; fi
+
+psql-source: check-env ## Open psql on the source ERP database (atlas)
+> $(EXEC) postgres-source psql -U postgres -d atlas
+
+psql-platform: check-env ## Open psql on the platform Postgres server
+> $(EXEC) postgres-platform psql -U postgres
+
+##@ Simulated ERP
+
+SEED ?= 42
+GENERATOR := $(COMPOSE) --profile core --profile generator run --rm --build event-generator
+
+seed: check-env ## Load the ERP reference data (SEED=42; FORCE=1 replaces existing data)
+> $(GENERATOR) seed --seed $(SEED) $(if $(FORCE),--force)
+
+gen: check-env ## Run any event-generator command, e.g. make gen ARGS="fingerprint"
+> $(GENERATOR) $(ARGS)

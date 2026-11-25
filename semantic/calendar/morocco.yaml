@@ -1,0 +1,49 @@
+# Moroccan business calendar shared by the generator, dbt and the agent.
+#
+# Religious dates follow the lunar calendar and are announced by the Ministry of Habous after
+# moon sighting, so each one is sourced. Dates for 2025 and 2026 were checked on 2026-11-25
+# against timeanddate.com (https://www.timeanddate.com/holidays/morocco/2025 and /2026);
+# 2027 dates come from https://www.timeanddate.com/holidays/morocco/2027, where they are
+# marked "tentative", and must be confirmed once announced.
+#
+# Ramadan ends the day before Eid al-Fitr. In Morocco, clocks move from UTC+1 to UTC+0
+# during Ramadan; `utc_offset_hours` gives the local offset outside it.
+
+utc_offset_hours: 1
+
+# Fixed-date public holidays, every year from `since` (inclusive).
+fixed_holidays:
+  - {month: 1, day: 1, name: New Year's Day}
+  - {month: 1, day: 11, name: Anniversary of the Independence Manifesto}
+  - {month: 1, day: 14, name: Amazigh New Year}
+  - {month: 5, day: 1, name: Labour Day}
+  - {month: 7, day: 30, name: Throne Day}
+  - {month: 8, day: 14, name: Anniversary of the Recovery of Oued Ed-Dahab}
+  - {month: 8, day: 20, name: Anniversary of the Revolution of the King and the People}
+  - {month: 8, day: 21, name: Youth Day}
+  - {month: 10, day: 31, name: Unity Day, since: 2026}  # first listed for 2026
+  - {month: 11, day: 6, name: Anniversary of the Green March}
+  - {month: 11, day: 18, name: Independence Day}
+
+years:
+  2025:
+    ramadan: {start: 2025-03-02, end: 2025-03-30}            # timeanddate.com 2025
+    holidays:
+      eid_al_fitr: [2025-03-31, 2025-04-01]                  # timeanddate.com 2025
+      eid_al_adha: [2025-06-07, 2025-06-08, 2025-06-09]      # timeanddate.com 2025; third day is a government holiday
+      islamic_new_year: [2025-06-27]                         # timeanddate.com 2025
+      mawlid: [2025-09-05, 2025-09-06]                       # timeanddate.com 2025
+  2026:
+    ramadan: {start: 2026-02-19, end: 2026-03-19}            # timeanddate.com 2026
+    holidays:
+      eid_al_fitr: [2026-03-20, 2026-03-21, 2026-03-23]      # timeanddate.com 2026; 2026-03-23 is a government holiday
+      eid_al_adha: [2026-05-27, 2026-05-28, 2026-05-29]      # timeanddate.com 2026; third day is a government holiday
+      islamic_new_year: [2026-06-17]                         # timeanddate.com 2026
+      mawlid: [2026-08-25]                                   # timeanddate.com 2026
+  2027:
+    ramadan: {start: 2027-02-08, end: 2027-03-09}            # timeanddate.com 2027, tentative
+    holidays:
+      eid_al_fitr: [2027-03-10, 2027-03-11]                  # timeanddate.com 2027, tentative
+      eid_al_adha: [2027-05-17, 2027-05-18]                  # timeanddate.com 2027, tentative
+      islamic_new_year: [2027-06-06]                         # timeanddate.com 2027, tentative
+      mawlid: [2027-08-15, 2027-08-16]                       # timeanddate.com 2027, tentative
