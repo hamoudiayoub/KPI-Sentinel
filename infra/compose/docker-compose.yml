@@ -1,0 +1,83 @@
+# Local KPI Sentinel stack. Start it through the Makefile (`make up PROFILE=core`).
+#
+# Profiles group the services so that one part of the stack can run without the others:
+#   core      source ERP, platform database, Kafka, Kafka Connect, event generator
+#   lake      MinIO, Nessie, Trino, Spark, Dagster
+#   platform  Keycloak, platform-api, agent-service, anomaly-detector, web
+#   obs       OpenTelemetry Collector, Prometheus, Grafana, Tempo, Loki
+#   all       every service
+#
+# Ports are bound to 127.0.0.1 only: nothing is exposed to the local network.
+# Values come from .env next to this file (copy .env.example).
+
+name: ${COMPOSE_PROJECT_NAME:-kpi-sentinel}
+
+x-postgres-defaults: &postgres-defaults
+  image: postgres:18.7-bookworm
+  restart: unless-stopped
+  networks: [sentinel]
+  shm_size: 256mb
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+
+services:
+  # Simulated ERP. Logical decoding lets Debezium stream every change from the WAL.
+  postgres-source:
+    <<: *postgres-defaults
+    profiles: [core, all]
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=10
+      - -c
+      - max_wal_senders=10
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SOURCE_PASSWORD:?set POSTGRES_SOURCE_PASSWORD in infra/compose/.env}
+      POSTGRES_DB: atlas
+    ports:
+      - "127.0.0.1:${POSTGRES_SOURCE_PORT:-5432}:5432"
+    volumes:
+      - postgres-source-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d atlas"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # Databases of the platform services, one database and one owner role per service.
+  postgres-platform:
+    <<: *postgres-defaults
+    profiles: [core, all]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PLATFORM_PASSWORD:?set POSTGRES_PLATFORM_PASSWORD in infra/compose/.env}
+      PLATFORM_DB_PASSWORD: ${PLATFORM_DB_PASSWORD:?set PLATFORM_DB_PASSWORD in infra/compose/.env}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?set KEYCLOAK_DB_PASSWORD in infra/compose/.env}
+      NESSIE_DB_PASSWORD: ${NESSIE_DB_PASSWORD:?set NESSIE_DB_PASSWORD in infra/compose/.env}
+      DAGSTER_DB_PASSWORD: ${DAGSTER_DB_PASSWORD:?set DAGSTER_DB_PASSWORD in infra/compose/.env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PLATFORM_PORT:-5433}:5432"
+    volumes:
+      - postgres-platform-data:/var/lib/postgresql
+      # Scripts in this folder run once, when the data volume is created.
+      - ../postgres/platform/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+networks:
+  sentinel:
+    name: sentinel
+
+volumes:
+  postgres-source-data:
+  postgres-platform-data:
