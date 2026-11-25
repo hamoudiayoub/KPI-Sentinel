@@ -1,7 +1,8 @@
 # Root of the uv workspace (ADR-0001, ADR-0007).
 # It is not an installable package: it carries the shared tooling (ruff, pytest)
 # and declares where the monorepo's Python packages live. Each package has its own
-# pyproject.toml and is added to `members` below when it is created.
+# pyproject.toml, is added to `members` below when it is created, and is listed in the
+# root dependencies so that `uv sync` installs it into the shared environment.
 
 [project]
 name = "kpi-sentinel"
@@ -10,7 +11,7 @@ description = "KPI Sentinel — Python workspace: generator, streaming, dbt, orc
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = ["event-generator"]
 
 [dependency-groups]
 dev = [
@@ -18,6 +19,7 @@ dev = [
   "pytest>=9",
   "pytest-cov>=7",
   "pyyaml>=6",
+  "testcontainers[postgres]>=4.15",
 ]
 
 [tool.uv]
@@ -27,7 +29,10 @@ package = false
 # uv requires a pyproject.toml in every listed folder (globs included), so members are added
 # explicitly as packages are created: services/event-generator, pipelines/streaming,
 # pipelines/orchestration, pipelines/dbt, services/anomaly-detector, evaluation.
-members = []
+members = ["services/event-generator"]
+
+[tool.uv.sources]
+event-generator = { workspace = true }
 
 # --- ruff: shared lint and format (docs/03-engineering-standards.md §7) ---
 [tool.ruff]
@@ -50,8 +55,11 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "S603", "S607", "S608", "ANN"]   # asserts, docker calls, fixture SQL, optional annotations
-"**/conftest.py" = ["S603", "S607"]   # test helpers call docker compose
+"**/tests/**" = ["S101", "S106", "S603", "S607", "S608", "ANN"]   # asserts, test credentials, docker calls, fixture SQL, optional annotations
+"**/conftest.py" = ["S106", "S603", "S607"]   # test helpers use test credentials and call docker
+
+[tool.ruff.lint.isort]
+known-first-party = ["sentinel_gen"]
 
 # --- pytest: shared configuration ---
 [tool.pytest.ini_options]

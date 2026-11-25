@@ -1,0 +1,184 @@
+# Atlas Distribution, a fictional FMCG distributor in Morocco.
+# Geography is real (the 12 regions and their main cities); every company, person and
+# brand name is fictional. All amounts are in MAD.
+
+customers: 2000
+sales_reps: 40
+products: 300
+
+# Each region is served by one warehouse; far regions get extra delivery days.
+regions:
+  - code: TTA
+    name: Tanger-Tétouan-Al Hoceïma
+    warehouse: TNG
+    cities: {Tangier: 10, Tétouan: 5, Larache: 2, Al Hoceïma: 1}
+  - code: ORI
+    name: L'Oriental
+    warehouse: FEZ
+    cities: {Oujda: 5, Nador: 4, Berkane: 1}
+  - code: FME
+    name: Fès-Meknès
+    warehouse: FEZ
+    cities: {Fez: 10, Meknès: 7, Taza: 2}
+  - code: RSK
+    name: Rabat-Salé-Kénitra
+    warehouse: CAS
+    cities: {Rabat: 8, Salé: 8, Kénitra: 5, Témara: 3}
+  - code: BMK
+    name: Béni Mellal-Khénifra
+    warehouse: CAS
+    cities: {Béni Mellal: 4, Khouribga: 2}
+  - code: CSE
+    name: Casablanca-Settat
+    warehouse: CAS
+    cities: {Casablanca: 30, Mohammedia: 3, El Jadida: 3, Settat: 2, Berrechid: 2}
+  - code: MSA
+    name: Marrakech-Safi
+    warehouse: MRK
+    cities: {Marrakesh: 12, Safi: 3, Essaouira: 1}
+  - code: DTA
+    name: Drâa-Tafilalet
+    warehouse: MRK
+    extra_lead_days: 1
+    cities: {Errachidia: 1, Ouarzazate: 1}
+  - code: SMA
+    name: Souss-Massa
+    warehouse: AGA
+    cities: {Agadir: 6, Inezgane: 2, Taroudant: 1}
+  - code: GON
+    name: Guelmim-Oued Noun
+    warehouse: AGA
+    extra_lead_days: 1
+    cities: {Guelmim: 1}
+  - code: LSH
+    name: Laâyoune-Sakia El Hamra
+    warehouse: AGA
+    extra_lead_days: 1
+    cities: {Laâyoune: 2}
+  - code: DOD
+    name: Dakhla-Oued Ed-Dahab
+    warehouse: AGA
+    extra_lead_days: 2
+    cities: {Dakhla: 1}
+
+warehouses:
+  - {code: CAS, name: Casablanca distribution center, city: Casablanca, lead_days: 1}
+  - {code: TNG, name: Tangier distribution center, city: Tangier, lead_days: 2}
+  - {code: FEZ, name: Fez distribution center, city: Fez, lead_days: 2}
+  - {code: MRK, name: Marrakesh distribution center, city: Marrakesh, lead_days: 2}
+  - {code: AGA, name: Agadir distribution center, city: Agadir, lead_days: 2}
+
+# share: part of the points of sale; city_weight_exponent > 1 concentrates a channel in
+# big cities. The other fields drive the demand model (see MODEL.md).
+channels:
+  TRADITIONAL:
+    share: 0.70
+    city_weight_exponent: 1.0
+    orders_per_day: 0.28
+    lines_per_order: 4.5
+    units_per_line: 3
+    weekday_factors: [1.15, 1.10, 1.05, 1.10, 0.85, 1.05, 0.35]
+  MODERN_TRADE:
+    share: 0.10
+    city_weight_exponent: 1.5
+    orders_per_day: 0.90
+    lines_per_order: 12
+    units_per_line: 20
+    weekday_factors: [1.10, 1.10, 1.05, 1.10, 1.05, 1.00, 0.30]
+  HORECA:
+    share: 0.15
+    city_weight_exponent: 1.2
+    orders_per_day: 0.35
+    lines_per_order: 4
+    units_per_line: 4
+    weekday_factors: [1.20, 1.05, 1.00, 1.15, 0.95, 1.05, 0.30]
+  ECOMMERCE:
+    share: 0.05
+    city_weight_exponent: 2.0
+    orders_per_day: 0.60
+    lines_per_order: 6
+    units_per_line: 6
+    weekday_factors: [1.05, 1.00, 1.00, 1.00, 1.00, 1.05, 0.70]
+
+# weight: share of order lines; price: pack price range in MAD.
+categories:
+  - key: beverages
+    name: Beverages
+    weight: 0.18
+    price: [40, 140]
+    types: [Cola, Orange Soda, Lemon Soda, Iced Tea, Apple Juice, Orange Juice, Mint Tea Drink]
+    packs: [33 cl x 24, 25 cl x 24, 1 L x 6, 1.5 L x 6]
+  - key: water
+    name: Water
+    weight: 0.14
+    price: [25, 60]
+    types: [Still Water, Sparkling Water, Mineral Water]
+    packs: [0.5 L x 12, 1.5 L x 6, 5 L x 2]
+  - key: dairy
+    name: Dairy
+    weight: 0.14
+    price: [30, 150]
+    types: [Milk, Yogurt, Raib, Lben, Butter, Cheese Portions, Cream]
+    packs: [1 L x 6, 110 g x 24, 500 ml x 12, 8 portions x 12]
+  - key: dry_grocery
+    name: Dry grocery
+    weight: 0.18
+    price: [20, 180]
+    types: [Couscous, Flour, Sugar, Pasta, Rice, Lentils, Vegetable Oil, Green Tea]
+    packs: [1 kg x 10, 5 kg, 1 L x 12, 500 g x 20]
+  - key: canned
+    name: Canned food
+    weight: 0.08
+    price: [60, 300]
+    types: [Sardines, Tuna, Tomato Paste, Chickpeas, Olives]
+    packs: [125 g x 50, 400 g x 24, 800 g x 12]
+  - key: personal_care
+    name: Personal care
+    weight: 0.10
+    price: [60, 400]
+    types: [Shampoo, Soap, Toothpaste, Shower Gel, Deodorant]
+    packs: [400 ml x 12, 90 g x 72, 75 ml x 48]
+  - key: household
+    name: Household cleaning
+    weight: 0.09
+    price: [50, 250]
+    types: [Dishwashing Liquid, Laundry Powder, Bleach, Floor Cleaner]
+    packs: [750 ml x 12, 3 kg x 4, 1 L x 12]
+  - key: confectionery
+    name: Confectionery
+    weight: 0.09
+    price: [20, 200]
+    types: [Chocolate Bar, Biscuits, Wafers, Candy, Chewing Gum]
+    packs: [40 g x 48, 200 g x 24, 1 kg]
+
+brands:
+  - {name: Azura, categories: [water, beverages]}
+  - {name: Oasis Drinks, categories: [beverages]}
+  - {name: Rifia, categories: [water]}
+  - {name: Nouria, categories: [dairy]}
+  - {name: Douceur d'Atlas, categories: [dairy, confectionery]}
+  - {name: Medina Fresh, categories: [dairy]}
+  - {name: Sabil, categories: [dry_grocery]}
+  - {name: Andalusia Pantry, categories: [dry_grocery, canned]}
+  - {name: Kasbah Gold, categories: [dry_grocery]}
+  - {name: Saharo, categories: [canned]}
+  - {name: Argana Home, categories: [household]}
+  - {name: Bahia Clean, categories: [household]}
+  - {name: Tala Care, categories: [personal_care]}
+  - {name: Zelij, categories: [personal_care]}
+  - {name: Noujoum Sweets, categories: [confectionery]}
+
+names:
+  shop_prefixes:
+    TRADITIONAL: [Épicerie, Hanout, Alimentation, Mini-marché]
+    MODERN_TRADE: [Supermarché, Marché, Hypermarché]
+    HORECA: [Café, Restaurant, Hôtel, Snack]
+    ECOMMERCE: [E-shop, Express, Online Market]
+  shop_words: [Al Amal, Al Baraka, Annour, Assalam, Al Khair, Atlas, Al Fath, Ennasr, Al Wafa,
+               Essaada, Al Firdaws, Arrahma, Al Massira, Zitoune, Yasmine, Nakhil, Al Inara,
+               Bab Al Bahr, Al Andalous, Riad]
+  first_names: [Youssef, Mohamed, Amine, Hamza, Mehdi, Omar, Karim, Rachid, Said, Nabil,
+                Fatima, Khadija, Salma, Imane, Sara, Nadia, Hajar, Meryem, Zineb, Houda]
+  last_names: [Alaoui, Bennani, Tazi, El Idrissi, Berrada, Benjelloun, Chraibi, Amrani,
+               Ouazzani, Kettani, Lahlou, Bouzid, El Mansouri, Haddad, Ziani, Naciri, Sebti,
+               Fikri, Moussaoui, Rahmouni]
