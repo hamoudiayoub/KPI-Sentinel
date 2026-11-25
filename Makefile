@@ -93,8 +93,9 @@ check-env:
 >   echo "Missing $(COMPOSE_ENV). Create it with: cp $(COMPOSE_DIR)/.env.example $(COMPOSE_ENV)"; \
 >   exit 1; fi
 
-up: check-env ## Start the PROFILE services and wait until they are healthy (default: core)
-> $(COMPOSE) $(foreach p,$(PROFILE),--profile $(p)) up -d --wait --wait-timeout 180
+up: check-env ## Start the PROFILE services and wait until they are ready (default: core)
+> $(COMPOSE) $(foreach p,$(PROFILE),--profile $(p)) up -d --build
+> $(COMPOSE_DIR)/wait-until-ready.sh 240 $(COMPOSE) $(foreach p,$(PROFILE),--profile $(p))
 
 down: check-env ## Stop every service of the stack, keeping the data volumes
 > $(COMPOSE) --profile all down
