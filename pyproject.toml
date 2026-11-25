@@ -49,7 +49,8 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "S603", "S607", "ANN"]   # asserts, subprocess calls to docker, optional annotations
+"**/tests/**" = ["S101", "S603", "S607", "S608", "ANN"]   # asserts, docker calls, fixture SQL, optional annotations
+"**/conftest.py" = ["S603", "S607"]   # test helpers call docker compose
 
 # --- pytest: shared configuration ---
 [tool.pytest.ini_options]
