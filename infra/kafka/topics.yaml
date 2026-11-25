@@ -1,0 +1,28 @@
+# Application topics, applied by the kafka-init service (infra/kafka/apply_topics.py).
+# CDC topics (atlas.erp.*) are not listed here: Kafka Connect creates them.
+#
+# Applying is idempotent: missing topics are created, partitions can only grow,
+# and the listed configs are set on every run.
+
+defaults:
+  partitions: 6
+  replication_factor: 3
+  config:
+    min.insync.replicas: 2
+
+topics:
+  - name: sentinel.anomaly.detected.v1
+    config:
+      retention.ms: 1209600000 # 14 days
+
+  - name: sentinel.investigation.requested.v1
+    config:
+      retention.ms: 1209600000 # 14 days
+
+  - name: sentinel.investigation.step.v1
+    config:
+      retention.ms: 604800000 # 7 days
+
+  - name: sentinel.investigation.completed.v1
+    config:
+      retention.ms: 2592000000 # 30 days
