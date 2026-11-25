@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-COMPOSE_DIR = Path(__file__).resolve().parents[1]
+COMPOSE_DIR = Path(__file__).resolve().parent / "compose"
 COMPOSE_FILE = COMPOSE_DIR / "docker-compose.yml"
 ENV_FILE = COMPOSE_DIR / ".env"
 
@@ -36,11 +36,15 @@ def env() -> dict[str, str]:
 
 @pytest.fixture(scope="session")
 def psql() -> Psql:
-    """Runs one SQL statement with psql inside a service container and returns its output."""
+    """Runs SQL with psql inside a service container and returns its output.
+
+    `sql` is one statement, or a list of statements run in order in the same session
+    (useful for BEGIN ... ROLLBACK). Only query results are printed, not command tags.
+    """
 
     def run(
         service: str,
-        sql: str,
+        sql: str | list[str],
         *,
         user: str = "postgres",
         database: str = "postgres",
@@ -59,10 +63,12 @@ def psql() -> Psql:
         if password is not None:
             # A password is only checked over TCP, so connect to localhost inside the container.
             command += ["-e", f"PGPASSWORD={password}"]
-        command += [service, "psql", "--no-psqlrc", "-v", "ON_ERROR_STOP=1", "-tA"]
+        command += [service, "psql", "--no-psqlrc", "-v", "ON_ERROR_STOP=1", "-qtA"]
         if password is not None:
             command += ["-h", "localhost"]
-        command += ["-U", user, "-d", database, "-c", sql]
+        command += ["-U", user, "-d", database]
+        for statement in [sql] if isinstance(sql, str) else sql:
+            command += ["-c", statement]
         result = subprocess.run(command, capture_output=True, text=True, check=False)
         if result.returncode != 0:
             raise RuntimeError(result.stderr.strip() or result.stdout.strip())
