@@ -50,6 +50,31 @@ services:
       retries: 10
       start_period: 10s
 
+  # Applies the ERP schema migrations, then exits. Safe to re-run: applied versions are skipped.
+  flyway-source:
+    image: flyway/flyway:13.13.0-alpine
+    profiles: [core, all]
+    command: migrate
+    networks: [sentinel]
+    depends_on:
+      postgres-source:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres-source:5432/atlas
+      FLYWAY_USER: postgres
+      FLYWAY_PASSWORD: ${POSTGRES_SOURCE_PASSWORD:?set POSTGRES_SOURCE_PASSWORD in infra/compose/.env}
+      # Migration history lives in its own schema, outside the captured erp schema.
+      FLYWAY_SCHEMAS: flyway,erp
+      FLYWAY_DEFAULT_SCHEMA: flyway
+      FLYWAY_LOCATIONS: filesystem:/flyway/migrations
+      FLYWAY_PLACEHOLDERS_DEBEZIUM_PASSWORD: ${DEBEZIUM_DB_PASSWORD:?set DEBEZIUM_DB_PASSWORD in infra/compose/.env}
+    volumes:
+      - ../postgres/source/migrations:/flyway/migrations:ro
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   # Databases of the platform services, one database and one owner role per service.
   postgres-platform:
     <<: *postgres-defaults
