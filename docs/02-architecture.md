@@ -328,3 +328,4 @@ Each row gives the verification date and what compatibility was checked.
 | Flyway (image `flyway/flyway:13.13.0-alpine`) | 13.13.0 | 2026-11-25 | PostgreSQL 18.7 (migrations applied and validated) |
 | Apache Kafka (image `apache/kafka:4.4.0`) | 4.4.0 | 2026-11-25 | KRaft combined mode, 3 voters; clients and Kafka Connect use the backward-compatible protocol |
 | Kafka UI (image `kafbat/kafka-ui:v1.5.1`) | 1.5.1 | 2026-11-25 | Kafka 4.4.0 |
+| Event generator runtime (image `python:3.12.16-slim-bookworm`, uv 0.13.9) | Python 3.12.16 | 2026-11-25 | numpy 2.5, psycopg 3.3, pydantic 2.14, typer 0.29 (locked in `uv.lock`) |
