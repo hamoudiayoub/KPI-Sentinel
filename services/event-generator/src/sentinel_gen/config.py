@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Literal
 
@@ -59,6 +60,50 @@ class Names(BaseModel):
     last_names: list[str]
 
 
+class EidEffect(BaseModel):
+    week_before: float = Field(gt=0)
+    first_day: float = Field(gt=0)
+    following_days: float = Field(gt=0)
+
+
+class RamadanEffect(BaseModel):
+    channel_factors: dict[Channel, float]
+    category_uplift: dict[str, float]
+
+
+class Seasonality(BaseModel):
+    amplitude: float = Field(ge=0, lt=1)
+    peak_day: int = Field(ge=1, le=366)
+
+
+class Lifecycle(BaseModel):
+    cancellation_rate: float = Field(ge=0, lt=1)
+    late_delivery_rate: float = Field(ge=0, lt=1)
+    partial_delivery_rate: float = Field(ge=0, lt=1)
+    return_rate: float = Field(ge=0, lt=1)
+
+
+class HistorySettings(BaseModel):
+    end: date
+    promotions_per_month: float = Field(ge=0)
+    price_increases_per_product: float = Field(ge=0)
+
+
+class Demand(BaseModel):
+    yearly_trend: float
+    customer_size_sigma: float = Field(ge=0)
+    market_shock_shape: float = Field(gt=0)
+    public_holiday: float = Field(gt=0)
+    eid: EidEffect
+    ramadan: RamadanEffect
+    seasonality: dict[str, Seasonality]
+    popularity_exponent: float = Field(ge=0)
+    promotion_uplift: float = Field(ge=1)
+    volume_discounts: list[tuple[int, float]]
+    lifecycle: Lifecycle
+    history: HistorySettings
+
+
 class MarketConfig(BaseModel):
     customers: int = Field(gt=0)
     sales_reps: int = Field(gt=0)
@@ -69,6 +114,7 @@ class MarketConfig(BaseModel):
     categories: list[Category]
     brands: list[Brand]
     names: Names
+    demand: Demand
 
     @model_validator(mode="after")
     def check_references(self) -> MarketConfig:
@@ -92,6 +138,11 @@ class MarketConfig(BaseModel):
             raise ValueError(f"channels must be exactly {CHANNELS}")
         if abs(sum(p.share for p in self.channels.values()) - 1) > 1e-9:
             raise ValueError("channel shares must add up to 1")
+        demand_categories = set(self.demand.ramadan.category_uplift) | set(self.demand.seasonality)
+        if demand_categories - category_keys:
+            raise ValueError(
+                f"demand: unknown categories {sorted(demand_categories - category_keys)}"
+            )
         return self
 
 

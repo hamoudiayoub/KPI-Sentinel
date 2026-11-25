@@ -182,3 +182,33 @@ names:
   last_names: [Alaoui, Bennani, Tazi, El Idrissi, Berrada, Benjelloun, Chraibi, Amrani,
                Ouazzani, Kettani, Lahlou, Bouzid, El Mansouri, Haddad, Ziani, Naciri, Sebti,
                Fikri, Moussaoui, Rahmouni]
+
+# Demand model (see MODEL.md). Multipliers apply to the daily order rate of a point of sale,
+# except category effects, which apply to the number of lines of that category in an order.
+demand:
+  yearly_trend: 0.06            # +6 % per year
+  customer_size_sigma: 0.5      # log-normal spread of point-of-sale size (mean 1)
+  market_shock_shape: 40        # gamma shape of the daily market shock (mean 1)
+  public_holiday: 0.5
+  eid:
+    week_before: 1.25           # stocking up in the 7 days before the first day of Eid
+    first_day: 0.25
+    following_days: 0.6
+  ramadan:
+    channel_factors: {TRADITIONAL: 1.05, MODERN_TRADE: 1.10, HORECA: 0.70, ECOMMERCE: 1.15}
+    category_uplift: {dairy: 0.25, dry_grocery: 0.20}
+  seasonality:                  # yearly sinusoid on the lines of a category
+    beverages: {amplitude: 0.25, peak_day: 200}
+    water: {amplitude: 0.30, peak_day: 200}
+  popularity_exponent: 0.8      # Zipf-like popularity of products within a category
+  promotion_uplift: 1.6         # selection weight of a product while promoted
+  volume_discounts: [[50, 3], [100, 5]]   # [minimum units, % off]
+  lifecycle:
+    cancellation_rate: 0.03
+    late_delivery_rate: 0.08
+    partial_delivery_rate: 0.03
+    return_rate: 0.015          # share of delivered lines with a return
+  history:
+    end: 2026-11-01             # default end of the backfilled history (exclusive)
+    promotions_per_month: 6
+    price_increases_per_product: 1.2
