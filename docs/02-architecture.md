@@ -118,7 +118,7 @@ sequenceDiagram
 
 | Layer | Location | Content |
 |---|---|---|
-| Source | `postgres-source`, `erp` schema | ERP: reference data, orders, deliveries, returns, stock, prices, promotions |
+| Source | `postgres-source`, `erp` schema | ERP: reference data, orders, deliveries, returns, stock, prices, promotions ([data model](data-model/erp.md)) |
 | Bronze | `lakehouse.bronze` | `cdc_events` (raw Debezium envelope), `quarantine` |
 | Silver | `lakehouse.silver` | Current-state tables (ERP mirror), `order_status_events`, real-time aggregates |
 | Staging / intermediate | `lakehouse.staging`, `lakehouse.intermediate` | dbt models `stg_`, `int_` |
@@ -325,3 +325,4 @@ Each row gives the verification date and what compatibility was checked.
 | Surefire / Failsafe / Enforcer / Compiler | 3.6.1 / 3.6.1 / 3.7.0 / 3.16.0 | 2026-11-14 | Maven 3.9 |
 | Python / uv | 3.12 / 0.13 | 2026-11-14 | Package versions pinned in `uv.lock` |
 | PostgreSQL (image `postgres:18.7-bookworm`) | 18.7 | 2026-11-25 | Latest 18.x; 19.0 is a fresh major, kept back until Debezium support is confirmed |
+| Flyway (image `flyway/flyway:13.13.0-alpine`) | 13.13.0 | 2026-11-25 | PostgreSQL 18.7 (migrations applied and validated) |
