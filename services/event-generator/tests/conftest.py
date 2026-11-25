@@ -58,5 +58,5 @@ def postgres() -> Iterator[Settings]:
 
 @pytest.fixture
 def conn(postgres: Settings) -> Iterator[psycopg.Connection]:
-    with psycopg.connect(postgres.conninfo(), password="test-only") as connection:
+    with psycopg.connect(postgres.conninfo(), password="test-only", autocommit=True) as connection:
         yield connection

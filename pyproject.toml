@@ -68,5 +68,6 @@ testpaths = ["services", "pipelines", "evaluation", "infra"]
 addopts = "-ra --strict-markers --strict-config --import-mode=importlib"
 markers = [
   "integration: tests that start a container (Testcontainers) or use the compose stack",
+  "statistical: checks of the simulated data's statistical properties (slower)",
 ]
 xfail_strict = true
