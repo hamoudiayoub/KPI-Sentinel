@@ -263,14 +263,14 @@ Key rules: a ratio is computed as `sum(numerator) / sum(denominator)`, never as 
 
 ## 10. Environment profiles
 
-| Profile | Content | Estimated RAM (to be measured) |
+| Profile | Content | RAM |
 |---|---|---|
-| `core` | 2 Postgres, 3 Kafka, Connect, Kafka UI, generator | ~5 GB |
+| `core` | 2 Postgres, 3 Kafka, Connect, Kafka UI, generator | ~5 GB estimated; the 2 Postgres alone use ~70 MB idle (measured) |
 | `lake` | MinIO, Nessie, Trino, Spark, Dagster | ~6 GB |
 | `platform` | Keycloak, platform-api, agent-service, anomaly-detector, web | ~3 GB |
 | `obs` | OTel Collector, Prometheus, Grafana, Tempo, Loki | ~1.5 GB |
 
-Profiles can be combined: `make up PROFILE="core lake"`.
+Profiles can be combined: `make up PROFILE="core lake"`. Every service also belongs to the `all` profile. Ports are bound to `127.0.0.1` and can be changed in `infra/compose/.env`; each service has a memory limit. Operations: [docs/runbooks/local-environment.md](runbooks/local-environment.md).
 
 ## 11. Repository layout
 
@@ -324,3 +324,4 @@ Each row gives the verification date and what compatibility was checked.
 | JaCoCo | 0.8.16 | 2026-11-14 | JDK 21 |
 | Surefire / Failsafe / Enforcer / Compiler | 3.6.1 / 3.6.1 / 3.7.0 / 3.16.0 | 2026-11-14 | Maven 3.9 |
 | Python / uv | 3.12 / 0.13 | 2026-11-14 | Package versions pinned in `uv.lock` |
+| PostgreSQL (image `postgres:18.7-bookworm`) | 18.7 | 2026-11-25 | Latest 18.x; 19.0 is a fresh major, kept back until Debezium support is confirmed |
